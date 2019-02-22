@@ -13480,7 +13480,7 @@ class TestUserType(JitTestCase):
     def test_set_attr_non_initialized(self):
         # Remove this when import/export is implemented for classes
         with self.disableModuleHook():
-            with self.assertRaisesRegex(RuntimeError, "Tried to assign to nonexistent attribute"):
+            with self.assertRaisesRegex(RuntimeError, "Tried to set nonexistent attribute"):
                 @torch.jit.script
                 class Foo:
                     def __init__(self, x):

@@ -722,24 +722,13 @@ struct to_ir {
           << expected_annotation_size << ")!";
     }
 
-    size_t arg_annotation_idx = 0;
-    if (self) {
+    if (self && !userType) {
       AT_ASSERT(it != end);
       const auto& name = (*it).ident().name();
       environment_stack->setSugaredVar(def.range(), name, self);
-      // If this is a first-class type, we also need to bind "self" to a block
-      // input.
-      // TODO simplify this code and merge with below
-      if (userType) {
-        Value* new_input = block->addInput();
-        new_input->setUniqueName(name);
-        userType->value_ = new_input;
-
-        arguments.push_back(schema.arguments().at(arg_annotation_idx++));
-        new_input->setType(arguments.back().type());
-      }
       ++it;
     }
+    size_t arg_annotation_idx = 0;
     for (; it != end; ++it) {
       auto& name = (*it).ident().name();
       // Add the input to the graph
@@ -1833,7 +1822,10 @@ struct to_ir {
     const auto rhsValue =
         emitSugaredExpr(stmt.rhs(), 1)->asValue(stmt.rhs().range(), method);
     auto userObject = environment_stack->getSugaredVar(basename);
-    userObject->assign(stmt.range(), method, lhs.selector().name(), rhsValue);
+    const bool shouldDefine =
+        method.name() == "__init__" && basename.name() == "self";
+    userObject->setAttr(
+        stmt.range(), method, lhs.selector().name(), rhsValue, shouldDefine);
   }
 
   NodeKind getNodeKind(int kind, int ninputs) {
